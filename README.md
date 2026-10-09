@@ -79,7 +79,7 @@ To share the tool internally, send colleagues **prefire-console.js** and the ins
 
 For automatic loading, use the extension instead:
 
-1. Download [prefire-0.1.0.zip](dist/prefire-0.1.0.zip) and unzip it into a folder you will keep on your computer.(inside dist folder)
+1. Download [prefire-0.1.0.zip](dist/prefire-0.1.0.zip) and unzip it into a folder you will keep on your computer.
 2. Open `chrome://extensions` in Chrome.
 3. Enable **Developer mode** in the upper-right corner.
 4. Click **Load unpacked** and select the extracted folder containing `manifest.json`. If you downloaded the whole repository instead, select its [extension](extension) folder.
