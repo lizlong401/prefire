@@ -33,9 +33,9 @@ function setup(reduced = false) {
     requestAnimationFrame(fn) { frames.set(++frameId, fn); return frameId; },
     cancelAnimationFrame(id) { frames.delete(id); }
   });
-  function request(action, state, path = location.pathname) {
+  function request(action, state, path = location.pathname, transition) {
     listeners.message({source: window, origin: location.origin, data: {
-      channel: 'prefire-camera-v1', direction: 'request', id: 'test', action, state, path
+      channel: 'prefire-camera-v1', direction: 'request', id: 'test', action, state, path, transition
     }});
     return replies.at(-1);
   }
@@ -83,3 +83,16 @@ test('reports unavailable camera', () => {
   const h = setup(); h.camera.connected = false;
   assert.match(h.request('status').error, /Waiting/);
 });
+
+for (const [preset, duration] of [['smooth', 700], ['gentle', 1400], ['snappy', 350], ['instant', 0]]) {
+  test(`transition preset ${preset} reaches saved state`, () => {
+    const h = setup();
+    h.request('go', target, h.location.pathname, preset);
+    if (duration) {
+      h.tick(duration / 2);
+      assert.ok(h.camera.tx > 100 && h.camera.tx < 500);
+    }
+    h.tick(duration);
+    assert.deepEqual(h.writes.at(-1), {tx: 500, ty: 600, scale: 2});
+  });
+}

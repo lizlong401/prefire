@@ -27,7 +27,7 @@
       s.viewport?.width, s.viewport?.height].every(Number.isFinite) &&
       s.scale > 0 && s.viewport.width > 0 && s.viewport.height > 0;
   }
-  function go(camera, target) {
+  function go(camera, target, preset = 'smooth') {
     if (!valid(target)) throw new Error('Invalid saved view.');
     stop();
     const run = generation;
@@ -35,12 +35,16 @@
     const from = capture(camera);
     const tx = target.tx + from.viewport.x + from.viewport.width / 2 - target.viewport.x - target.viewport.width / 2;
     const ty = target.ty + from.viewport.y + from.viewport.height / 2 - target.viewport.y - target.viewport.height / 2;
-    const duration = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 700;
+    const durations = {smooth: 700, gentle: 1400, snappy: 350, instant: 0};
+    const selectedDuration = Object.hasOwn(durations, preset) ? durations[preset] : 700;
+    const duration = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : selectedDuration;
     const start = performance.now();
     function tick(now) {
       if (run !== generation || path !== location.pathname || document.hidden || !camera.connected) return stop();
       const t = duration ? Math.min((now - start) / duration, 1) : 1;
-      const e = t * t * (3 - 2 * t);
+      const e = preset === 'gentle'
+        ? t * t * t * (t * (6 * t - 15) + 10)
+        : preset === 'snappy' ? 1 - (1 - t) ** 3 : t * t * (3 - 2 * t);
       try {
         camera.submitCanvasState(from.tx + (tx - from.tx) * e,
           from.ty + (ty - from.ty) * e, from.scale + (target.scale - from.scale) * e);
@@ -61,7 +65,7 @@
       else {
         const camera = discover(document);
         if (!camera) throw new Error('Waiting for Firefly camera. If this persists, Firefly may have changed.');
-        if (m.action === 'go') { go(camera, m.state); value = true; }
+        if (m.action === 'go') { go(camera, m.state, m.transition); value = true; }
         else value = capture(camera);
       }
     } catch (e) { error = e.message; }

@@ -59,6 +59,7 @@ Rerun the script after refreshing or opening another document. Running it again 
 2. Enter a name and click **Save current view**.
 3. Repeat for other boards, then click a saved name to move to that view.
 
+- **Transition:** choose **Smooth** (0.7s), **Gentle** (1.4s with softer starts and stops), **Snappy** (0.35s with a fast start), or **Instant** before clicking a saved view.
 - **Reorder:** drag the **⠿** handle. A blue line shows where the view will land. The arrow buttons also move views up or down.
 - **Rename:** change a view’s name.
 - **Update:** replace a saved view with your current position and zoom.

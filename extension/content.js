@@ -4,12 +4,12 @@
   const pending = new Map();
   let path = '', host, root, views = [], ready = false, busy = false, epoch = 0;
   const key = p => 'prefire:v1:' + p;
-  function request(action, state) {
+  function request(action, state, transition) {
     return new Promise((resolve, reject) => {
       const id = crypto.randomUUID();
       const timer = setTimeout(() => { pending.delete(id); reject(new Error('Firefly camera did not respond. Reload the tab.')); }, 2500);
       pending.set(id, {resolve, reject, timer});
-      window.postMessage({channel: CHANNEL, direction: 'request', id, path, action, state}, location.origin);
+      window.postMessage({channel: CHANNEL, direction: 'request', id, path, action, state, transition}, location.origin);
     });
   }
   window.addEventListener('message', event => {
@@ -111,7 +111,7 @@
     views.forEach((v, index) => {
       const item = document.createElement('div'); item.className = 'item';
       const go = button(v.name, async () => {
-        await request('go', v.state); status('Moving to ' + v.name);
+        await request('go', v.state, root.querySelector('#transition').value); status('Moving to ' + v.name);
       });
       go.className = 'go'; go.disabled = !ready || busy;
       const handle = button('⠿', () => {}, 'Drag to reorder');
@@ -155,10 +155,10 @@
         .panel{width:284px;background:#202124;color:#f1f3f4;border:1px solid #45474b;border-radius:14px;box-shadow:0 8px 32px #0005;font:13px system-ui}
         header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px}
         strong{font-size:14px} #body{padding:0 14px 14px}
-        input,button{font:inherit;border:1px solid #53565c;border-radius:7px;padding:8px;background:#303238;color:inherit}
+        input,button,select{font:inherit;border:1px solid #53565c;border-radius:7px;padding:8px;background:#303238;color:inherit}
         button{cursor:pointer}button:hover{background:#41444b}button:disabled{opacity:.45;cursor:default}
         button:focus-visible,input:focus-visible{outline:2px solid #a8c7fa;outline-offset:2px}
-        input{width:100%;margin:8px 0}#save{width:100%;background:#a8c7fa;color:#14233b;border:0}
+        select{width:100%;margin:6px 0}.transition-label{display:block;margin-top:12px;color:#b5b8bf}input{width:100%;margin:8px 0}#save{width:100%;background:#a8c7fa;color:#14233b;border:0}
         #list{max-height:45vh;overflow:auto;margin-top:12px}.item{border-top:1px solid #414349;padding:10px 0}
         .go{width:100%;text-align:left;overflow-wrap:anywhere}.drag-handle{cursor:grab!important}.drag-handle:active{cursor:grabbing!important}.dragging{opacity:.45}.drop-before{box-shadow:inset 0 3px #a8c7fa}.drop-after{box-shadow:inset 0 -3px #a8c7fa}.actions{display:flex;gap:4px;margin-top:6px}.actions button{font-size:11px;padding:5px}
         p{color:#b5b8bf;font-size:12px;line-height:1.5;margin:8px 0}#status{min-height:18px}#stop{width:100%;margin-top:8px}[hidden]{display:none!important}
@@ -167,6 +167,13 @@
         <header><strong>Prefire · Saved views</strong><button id="collapse" aria-expanded="true" aria-controls="body" aria-label="Collapse panel">−</button></header>
         <div id="body"><p>Frame a board, then save its position and zoom.</p>
           <form><input id="name" maxlength="80" placeholder="Name this view" aria-label="View name" required><button id="save" type="submit">Save current view</button></form>
+          <label class="transition-label" for="transition">Transition</label>
+          <select id="transition" aria-label="Transition style">
+            <option value="smooth">Smooth · 0.7s</option>
+            <option value="gentle">Gentle · 1.4s</option>
+            <option value="snappy">Snappy · 0.35s</option>
+            <option value="instant">Instant</option>
+          </select>
           <p id="status" role="status" aria-live="polite">Connecting to Firefly…</p>
           <p id="empty">Your saved views will appear here.</p><div id="list"></div>
           <button id="stop">Stop movement</button><p>Esc or canvas input stops movement. Views stay on this device.</p>
@@ -230,6 +237,23 @@
     views = Array.isArray(saved) ? saved.filter(valid) : [];
     render();
   });
+  // Keep canvas shortcuts from consuming editing keys in our name field.
+  // Native input editing still runs because we do not prevent its default action.
+  function protectNameInput(event) {
+    if (!host || !root || !event.composedPath().includes(host) ||
+        !['input', 'select'].includes(root.activeElement?.localName)) return;
+    event.stopImmediatePropagation();
+    if (event.type === 'keydown' && event.key === 'Enter' && !event.isComposing && root.activeElement?.localName === 'input') {
+      event.preventDefault();
+      root.querySelector('form').requestSubmit();
+    }
+    if (event.type === 'keydown' && event.key === 'Escape') {
+      request('stop').catch(e => status(e.message));
+    }
+  }
+  window.addEventListener('keydown', protectNameInput, true);
+  window.addEventListener('keyup', protectNameInput, true);
+  window.addEventListener('keypress', protectNameInput, true);
   routeCheck().then(probe);
   setInterval(routeCheck, 500);
   setInterval(probe, 3000);
