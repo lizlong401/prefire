@@ -85,6 +85,8 @@ For automatic loading, use the extension instead:
 4. Click **Load unpacked** and select the extracted folder containing `manifest.json`. If you downloaded the whole repository instead, select its [extension](extension) folder.
 5. Reload Firefly and open a board. The **Prefire · Saved views** panel appears automatically.
 
+![Chrome Extensions page with Developer mode enabled at the upper right and Load unpacked at the upper left](docs/images/chrome-developer-mode.png)
+
 To update, replace the files in the installed extension folder with the new version, click **Reload** on Prefire’s card in `chrome://extensions`, and refresh Firefly. Keep the same folder and installation to preserve saved views.
 
 To disable or remove the extension, use its toggle or **Remove** button in `chrome://extensions`.
