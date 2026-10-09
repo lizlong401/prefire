@@ -79,7 +79,7 @@ To share the tool internally, send colleagues **prefire-console.js** and the ins
 
 For automatic loading, use the extension instead:
 
-1. Download [prefire-0.1.0.zip](dist/prefire-0.1.0.zip) and unzip it into a folder you will keep on your computer.
+1. Download [prefire-0.1.0.zip](dist/prefire-0.1.0.zip) and unzip it into a folder you will keep on your computer.(inside dist folder)
 2. Open `chrome://extensions` in Chrome.
 3. Enable **Developer mode** in the upper-right corner.
 4. Click **Load unpacked** and select the extracted folder containing `manifest.json`. If you downloaded the whole repository instead, select its [extension](extension) folder.
@@ -105,4 +105,4 @@ The ZIP is written to `dist/prefire-0.1.0.zip`. Testers should unzip it and load
 - **Panel disappears after refresh:** rerun the console script, or use the Chrome extension for automatic loading.
 - **Saved view is outdated:** frame the board again and click **Update**.
 
-Prefire uses Firefly’s private camera interface, which Adobe may change at any time. It is independent of Adobe.
+COULD BREAK ANYTIMES
