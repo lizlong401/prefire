@@ -1,6 +1,6 @@
 # Prefire
 
-Save views in Adobe Firefly Boards and move smoothly between them. Frame each board once, save its position and zoom, then return with one click.
+Save views in Adobe Firefly Boards and move smoothly between them. Frame each board once, save its position and zoom, then return with one click. (Could break at anytime whenever Adobe firefly updates)
 
 ## Run the console script
 
@@ -105,4 +105,4 @@ The ZIP is written to `dist/prefire-0.1.0.zip`. Testers should unzip it and load
 - **Panel disappears after refresh:** rerun the console script, or use the Chrome extension for automatic loading.
 - **Saved view is outdated:** frame the board again and click **Update**.
 
-COULD BREAK ANYTIMES
+COULD BREAK AT ANYTIME
