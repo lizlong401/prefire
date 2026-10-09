@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "Prefire — Saved Views",
+  "version": "0.1.0",
+  "description": "Save camera views in Adobe Firefly Boards and glide between them.",
+  "minimum_chrome_version": "111",
+  "permissions": ["storage"],
+  "content_scripts": [
+    {"matches": ["https://firefly.adobe.com/*"], "js": ["page.js"], "world": "MAIN", "run_at": "document_idle"},
+    {"matches": ["https://firefly.adobe.com/*"], "js": ["content.js"], "run_at": "document_idle"}
+  ]
+}
