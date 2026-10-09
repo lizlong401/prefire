@@ -69,11 +69,20 @@ Rerun the script after refreshing or opening another document. Running it again 
 
 Transitions respect your system’s reduced-motion preference. Saved views are camera bookmarks; they do not follow boards that are moved later.
 
+## Share your saved order
+
+1. Arrange your saved views in the order you want and choose a transition style.
+2. Click **Export views** to download `prefire-saved-views.json`.
+3. Send that file and the Firefly document link to your teammate. They need access to the document and either the console script or the extension.
+4. Your teammate opens the **same Firefly document**, clicks **Import views**, and selects the JSON file.
+
+Import restores the names, camera positions, zoom levels, order, and transition style. If there are existing saved views, it asks before replacing them. Export first if you want to keep a backup. Files work between the console script and Chrome extension, including across browsers. They do not grant access to the Adobe document or update automatically when you change your sequence.
+
 ## Where views are saved
 
-The console script saves views locally in this browser, separately for each Firefly document. Refreshing preserves them; clearing Firefly site data removes them. They are not shared with colleagues or synced between browsers. The script does not send data to a server.
+The console script saves views locally in this browser, separately for each Firefly document. Refreshing preserves them; clearing Firefly site data removes them. They are not automatically synced between people or browsers; use Export and Import to share them. The script does not send data to a server.
 
-To share the tool internally, send colleagues **prefire-console.js** and the instructions above. Each person saves their own views.
+To share the tool internally, send colleagues **prefire-console.js** and the instructions above. Each person can save their own views or import your exported sequence.
 
 ## Chrome extension
 

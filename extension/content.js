@@ -50,6 +50,50 @@
     await request('stop');
     return request('capture');
   }
+  function exportViews() {
+    if (!views.length) throw new Error('Save a view before exporting.');
+    if (location.pathname !== path) throw new Error('Document changed. Reopen the panel.');
+    const data = {
+      format: 'prefire-saved-views', version: 1,
+      documentPath: path,
+      transition: root.querySelector('#transition').value,
+      views
+    };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'}));
+    const link = document.createElement('a');
+    link.href = url; link.download = 'prefire-saved-views.json';
+    document.body.append(link); link.click(); link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    status('Exported views in their current order.');
+  }
+  function parseSharedViews(text, expectedPath) {
+    const data = JSON.parse(text);
+    if (data?.format !== 'prefire-saved-views' || data.version !== 1) {
+      throw new Error('This is not a supported Prefire views file.');
+    }
+    if (data.documentPath !== expectedPath) {
+      throw new Error('This file belongs to another Firefly document. Open the original document first.');
+    }
+    if (!Array.isArray(data.views) || data.views.length === 0 || data.views.length > 500 ||
+        !data.views.every(v => valid(v) && v.name.trim().length > 0 && v.name.length <= 80)) {
+      throw new Error('The file contains invalid saved views (maximum 500).');
+    }
+    if (!['smooth', 'gentle', 'snappy', 'instant'].includes(data.transition)) {
+      throw new Error('The file contains an invalid transition style.');
+    }
+    // Copy only known fields. Generate fresh IDs to avoid collisions.
+    const imported = data.views.map(v => ({
+      id: crypto.randomUUID(), name: v.name.trim(),
+      state: {
+        tx: v.state.tx, ty: v.state.ty, scale: v.state.scale,
+        viewport: {
+          x: v.state.viewport.x, y: v.state.viewport.y,
+          width: v.state.viewport.width, height: v.state.viewport.height
+        }
+      }
+    }));
+    return {views: imported, transition: data.transition};
+  }
   let draggedId = null;
   function makeDraggable(item, handle, view) {
     handle.draggable = true;
@@ -106,6 +150,8 @@
     if (draggedId) return;
     if (!root) return;
     root.querySelector('#save').disabled = !ready || busy;
+    root.querySelector('#export').disabled = busy || !views.length;
+    root.querySelector('#import').disabled = busy;
     const list = root.querySelector('#list'); list.replaceChildren();
     root.querySelector('#empty').hidden = views.length > 0;
     views.forEach((v, index) => {
@@ -161,7 +207,7 @@
         select{width:100%;margin:6px 0}.transition-label{display:block;margin-top:12px;color:#b5b8bf}input{width:100%;margin:8px 0}#save{width:100%;background:#a8c7fa;color:#14233b;border:0}
         #list{max-height:45vh;overflow:auto;margin-top:12px}.item{border-top:1px solid #414349;padding:10px 0}
         .go{width:100%;text-align:left;overflow-wrap:anywhere}.drag-handle{cursor:grab!important}.drag-handle:active{cursor:grabbing!important}.dragging{opacity:.45}.drop-before{box-shadow:inset 0 3px #a8c7fa}.drop-after{box-shadow:inset 0 -3px #a8c7fa}.actions{display:flex;gap:4px;margin-top:6px}.actions button{font-size:11px;padding:5px}
-        p{color:#b5b8bf;font-size:12px;line-height:1.5;margin:8px 0}#status{min-height:18px}#stop{width:100%;margin-top:8px}[hidden]{display:none!important}
+        .sharing{display:flex;gap:6px;margin-top:10px}.sharing button{flex:1}p{color:#b5b8bf;font-size:12px;line-height:1.5;margin:8px 0}#status{min-height:18px}#stop{width:100%;margin-top:8px}[hidden]{display:none!important}
       </style>
       <section class="panel" aria-label="Prefire saved views">
         <header><strong>Prefire · Saved views</strong><button id="collapse" aria-expanded="true" aria-controls="body" aria-label="Collapse panel">−</button></header>
@@ -175,7 +221,8 @@
             <option value="instant">Instant</option>
           </select>
           <p id="status" role="status" aria-live="polite">Connecting to Firefly…</p>
-          <p id="empty">Your saved views will appear here.</p><div id="list"></div>
+          <p id="empty">Your saved views will appear here.</p><div id="list"></div><div class="sharing"><button id="export" type="button">Export views</button><button id="import" type="button">Import views</button></div>
+          <input id="import-file" type="file" accept=".json,application/json" hidden aria-label="Import saved views file">
           <button id="stop">Stop movement</button><p>Esc or canvas input stops movement. Views stay on this device.</p>
         </div>
       </section>`;
@@ -190,6 +237,29 @@
         if (current !== epoch) return;
         await commit([...views, {id: crypto.randomUUID(), name, state}]);
         if (current === epoch) input.value = '';
+      });
+    };
+    root.querySelector('#export').onclick = () => perform(exportViews);
+    root.querySelector('#import').onclick = () => {
+      if (!busy) root.querySelector('#import-file').click();
+    };
+    root.querySelector('#import-file').onchange = event => {
+      const file = event.target.files[0];
+      event.target.value = '';
+      if (!file) return;
+      const current = epoch;
+      const expectedPath = path;
+      perform(async () => {
+        if (file.size > 1024 * 1024) throw new Error('Views file is too large (maximum 1 MB).');
+        const imported = parseSharedViews(await file.text(), expectedPath);
+        if (current !== epoch || location.pathname !== expectedPath) return;
+        if (views.length && !confirm('Replace your ' + views.length + ' saved views with ' + imported.views.length + ' imported views?')) return;
+        await request('stop');
+        if (current !== epoch || location.pathname !== expectedPath) return;
+        await commit(imported.views);
+        if (current !== epoch) return;
+        root.querySelector('#transition').value = imported.transition;
+        status('Imported ' + imported.views.length + ' views in shared order.');
       });
     };
     root.querySelector('#stop').onclick = () => request('stop').catch(e => status(e.message));
