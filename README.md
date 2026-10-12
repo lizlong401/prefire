@@ -4,6 +4,8 @@ Save views in Adobe Firefly Boards and move smoothly between them. Frame each bo
 
 ## Demo
 
+[![Prefire demo: saving and switching between views](docs/videos/prefire-demo.gif)](docs/videos/prefire-demo.mp4)
+
 [Watch the Prefire screen recording](docs/videos/prefire-demo.mp4)
 
 ## Run the console script
