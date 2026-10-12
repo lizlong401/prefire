@@ -2,6 +2,10 @@
 
 Save views in Adobe Firefly Boards and move smoothly between them. Frame each board once, save its position and zoom, then return with one click. (Could break at anytime whenever Adobe firefly updates)
 
+## Demo
+
+[Watch the Prefire screen recording](docs/videos/prefire-demo.mp4)
+
 ## Run the console script
 
 No extension installation is needed. Use [prefire-console.js](prefire-console.js) with a Firefly board open.
