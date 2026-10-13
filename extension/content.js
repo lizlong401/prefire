@@ -2,6 +2,7 @@
   'use strict';
   const CHANNEL = 'prefire-camera-v1';
   const pending = new Map();
+  let disposeTryon;
   let path = '', host, root, views = [], ready = false, busy = false, epoch = 0;
   const key = p => 'prefire:v1:' + p;
   function request(action, state, transition) {
@@ -199,6 +200,7 @@
       <style>
         :host{all:initial;color-scheme:dark} *{box-sizing:border-box}
         .panel{width:284px;background:#202124;color:#f1f3f4;border:1px solid #45474b;border-radius:14px;box-shadow:0 8px 32px #0005;font:13px system-ui}
+        .panel.minimized{width:auto}.panel.minimized header{gap:10px;padding:8px 10px}.panel.minimized .full-title{display:none}
         header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px}
         strong{font-size:14px} #body{padding:0 14px 14px}
         input,button,select{font:inherit;border:1px solid #53565c;border-radius:7px;padding:8px;background:#303238;color:inherit}
@@ -210,8 +212,8 @@
         .sharing{display:flex;gap:6px;margin-top:10px}.sharing button{flex:1}p{color:#b5b8bf;font-size:12px;line-height:1.5;margin:8px 0}#status{min-height:18px}#stop{width:100%;margin-top:8px}[hidden]{display:none!important}
       </style>
       <section class="panel" aria-label="Prefire saved views">
-        <header><strong>Prefire · Saved views</strong><button id="collapse" aria-expanded="true" aria-controls="body" aria-label="Collapse panel">−</button></header>
-        <div id="body"><p>Frame a board, then save its position and zoom.</p>
+        <header><strong>Prefire<span class="full-title"> · Saved views</span></strong><button id="collapse" aria-expanded="true" aria-controls="body" title="Minimize panel" aria-label="Minimize panel">−</button></header>
+        <div id="body" style="max-height:75vh;overflow:auto"><p>Frame a board, then save its position and zoom.</p>
           <form><input id="name" maxlength="80" placeholder="Name this view" aria-label="View name" required><button id="save" type="submit">Save current view</button></form>
           <label class="transition-label" for="transition">Transition</label>
           <select id="transition" aria-label="Transition style">
@@ -223,7 +225,7 @@
           <p id="status" role="status" aria-live="polite">Connecting to Firefly…</p>
           <p id="empty">Your saved views will appear here.</p><div id="list"></div><div class="sharing"><button id="export" type="button">Export views</button><button id="import" type="button">Import views</button></div>
           <input id="import-file" type="file" accept=".json,application/json" hidden aria-label="Import saved views file">
-          <button id="stop">Stop movement</button><p>Esc or canvas input stops movement. Views stay on this device.</p>
+          <button id="stop">Stop movement</button><p>Esc or canvas input stops movement. Views stay on this device.</p><div id="tryon-plugin"></div>
         </div>
       </section>`;
     root.querySelector('form').onsubmit = event => {
@@ -265,16 +267,20 @@
     root.querySelector('#stop').onclick = () => request('stop').catch(e => status(e.message));
     root.querySelector('#collapse').onclick = event => {
       const body = root.querySelector('#body'); body.hidden = !body.hidden;
+      root.querySelector('.panel').classList.toggle('minimized', body.hidden);
       event.currentTarget.textContent = body.hidden ? '+' : '−';
       event.currentTarget.setAttribute('aria-expanded', String(!body.hidden));
-      event.currentTarget.setAttribute('aria-label', body.hidden ? 'Expand panel' : 'Collapse panel');
+      event.currentTarget.setAttribute('aria-label', body.hidden ? 'Restore panel' : 'Minimize panel');
+      event.currentTarget.setAttribute('title', body.hidden ? 'Restore panel' : 'Minimize panel');
     };
     document.body.append(host); render();
+    disposeTryon = globalThis.PrefireTryon.mount(root.querySelector('#tryon-plugin'), path);
   }
   async function routeCheck() {
     if (path === location.pathname) return;
     draggedId = null;
     epoch++; path = location.pathname; ready = false; busy = false; views = [];
+    disposeTryon?.(); disposeTryon = null;
     host?.remove(); host = root = null;
     if (!/^\/boards\/id\/[^/]+\/?$/.test(path)) return;
     mount();
@@ -313,7 +319,7 @@
     if (!host || !root || !event.composedPath().includes(host) ||
         !['input', 'select'].includes(root.activeElement?.localName)) return;
     event.stopImmediatePropagation();
-    if (event.type === 'keydown' && event.key === 'Enter' && !event.isComposing && root.activeElement?.localName === 'input') {
+    if (event.type === 'keydown' && event.key === 'Enter' && !event.isComposing && root.activeElement?.id === 'name') {
       event.preventDefault();
       root.querySelector('form').requestSubmit();
     }

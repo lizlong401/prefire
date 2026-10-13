@@ -61,6 +61,7 @@
     <style>
       :host{all:initial;color-scheme:dark}*{box-sizing:border-box}
       .panel{width:280px;background:#202124;color:#f1f3f4;border:1px solid #45474b;border-radius:14px;box-shadow:0 8px 32px #0005;font:13px system-ui}
+      .panel.minimized{width:auto}.panel.minimized header{gap:10px;padding:8px 10px}.panel.minimized .full-title{display:none}
       header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px}#body{padding:0 14px 14px}
       input,button,select{font:inherit;border:1px solid #53565c;border-radius:7px;padding:8px;background:#303238;color:inherit}
       button{cursor:pointer}button:hover{background:#41444b}button:disabled{opacity:.4;cursor:default}
@@ -71,7 +72,7 @@
       .sharing{display:flex;gap:6px;margin-top:10px}.sharing button{flex:1}p{color:#b5b8bf;font-size:12px;line-height:1.5;margin:8px 0}#stop{width:100%;margin-top:8px}[hidden]{display:none!important}
     </style>
     <section class="panel" aria-label="Prefire saved views">
-      <header><strong>Prefire · Saved views</strong><button id="collapse" aria-label="Collapse panel" aria-expanded="true" aria-controls="body">−</button></header>
+      <header><strong>Prefire<span class="full-title"> · Saved views</span></strong><button id="collapse" title="Minimize panel" aria-label="Minimize panel" aria-expanded="true" aria-controls="body">−</button></header>
       <div id="body"><p>Frame a board, then save its position and zoom.</p>
         <form><input id="name" maxlength="80" placeholder="Name this view" aria-label="View name" required><button id="save" type="submit">Save current view</button></form>
           <label class="transition-label" for="transition">Transition</label>
@@ -282,9 +283,11 @@
   root.querySelector('#stop').onclick = () => { stop(); status('Movement stopped.'); };
   root.querySelector('#collapse').onclick = event => {
     const body = root.querySelector('#body'); body.hidden = !body.hidden;
+    root.querySelector('.panel').classList.toggle('minimized', body.hidden);
     event.currentTarget.textContent = body.hidden ? '+' : '−';
     event.currentTarget.setAttribute('aria-expanded', String(!body.hidden));
-    event.currentTarget.setAttribute('aria-label', body.hidden ? 'Expand panel' : 'Collapse panel');
+    event.currentTarget.setAttribute('aria-label', body.hidden ? 'Restore panel' : 'Minimize panel');
+    event.currentTarget.setAttribute('title', body.hidden ? 'Restore panel' : 'Minimize panel');
   };
   function onKey(event) { if (event.key === 'Escape') stop(); }
   function onStorage(event) {

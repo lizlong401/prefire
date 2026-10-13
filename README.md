@@ -71,7 +71,7 @@ Rerun the script after refreshing or opening another document. Running it again 
 - **Update:** replace a saved view with your current position and zoom.
 - **Delete:** remove a saved view after confirmation.
 - **Stop:** press **Esc**, interact with the canvas, or click **Stop movement**.
-- **Collapse:** click the minus button in the panel header.
+- **Minimize:** click the minus button in the panel header to shrink it into a compact Prefire bar. Click **+** to restore the full panel.
 
 Transitions respect your system’s reduced-motion preference. Saved views are camera bookmarks; they do not follow boards that are moved later.
 
@@ -83,6 +83,54 @@ Transitions respect your system’s reduced-motion preference. Saved views are c
 4. Your teammate opens the **same Firefly document**, clicks **Import views**, and selects the JSON file.
 
 Import restores the names, camera positions, zoom levels, order, and transition style. If there are existing saved views, it asks before replacing them. Export first if you want to keep a backup. Files work between the console script and Chrome extension, including across browsers. They do not grant access to the Adobe document or update automatically when you change your sequence.
+
+## Try-on plugin (Chrome extension)
+
+The extension includes an optional **Try-on · Batch generation** section. Choose a model reference and clothing images once, then start a batch with **Generate N try-ons**. It generates one image per garment using the same person. Supported categories are tops, bottoms, and one-piece outfits; shoes and accessories are outside this version.
+
+Try-on uses [FASHN v1.6 through fal.ai](https://fal.ai/models/fal-ai/fashn/tryon/v1.6/api), rather than Adobe generation. Clicking Generate sends the selected images to that service and uses **paid fal credits**, separate from Adobe credits. No generation starts just by scanning or uploading images. The console script continues to provide saved views only.
+
+### Start the local generation service
+
+1. Create a fal API key with access to FASHN v1.6 and available credits.
+2. From the repository folder, run the following with Python 3.10 or newer (no additional Python packages needed):
+
+   ```sh
+   export FAL_KEY="your-fal-api-key"
+   python3 server/tryon.py
+   ```
+
+3. Keep the terminal open. The service listens only on `127.0.0.1:8765` and prints a **local service token**. The fal API key stays in the service environment; do not paste it into Prefire.
+4. Reload the updated extension at `chrome://extensions`, then refresh your Firefly board.
+5. Open **Try-on → Service settings**, paste the local service token, and click **Save token & connect**.
+
+The extension needs localhost host permission to contact this service. The extension ZIP contains the extension only; download the repository to run `server/tryon.py`.
+
+### Generate a batch
+
+1. Click **Scan board**. This reads candidate image references from Firefly's internal board data, including offscreen data when exposed. **The scan is experimental and cannot guarantee a complete inventory.** Check the thumbnails and add missing clothing images with the multiple-file uploader. Scans preserve previous selections; removed board assets may remain in this list until you remove them.
+2. Choose a board image as the model reference or upload a model photo. Model references are excluded from the clothing batch. Uploaded photos are resized to at most 1280 pixels and compressed to JPEG locally.
+3. Select the clothing images to generate. Choose a category per garment or leave **Auto category**. A scan does not classify images as clothing; use the checkboxes to exclude non-clothing images, thumbnails, and earlier results. **Select all clothing** selects all listed images except the chosen model reference, so review the list first.
+4. Click **Generate N try-ons**. N is the number of paid generations to request; no fixed cost estimate is provided. Check the provider's current pricing before a large batch. Jobs run sequentially.
+5. Results appear in the Try-on gallery. Use **Open / download result**, save the image, then import it into your Firefly board manually. **Automatic board insertion is not implemented** because no insertion interface has been verified.
+
+Use **Pause after current** to stop new submissions; the in-flight generation finishes and can still incur a charge. Use **Resume batch** to continue, or **Cancel remaining items** to remove queued work while allowing the current generation to finish. Refreshing or changing documents pauses processing; reopening the original board restores the batch and checks existing job IDs instead of automatically submitting again. Keep one Prefire tab per document while working on a batch.
+
+Failed items have **Retry this item**, which explicitly starts another paid request. If submission was interrupted or uncertain, check fal's request history before retrying. Transient service/status errors pause the batch so Resume can retrieve the same job. Public HTTPS source URLs must be accessible to the provider; for private, expired, or blob URLs, upload the original image file instead.
+
+Each document stores one batch gallery locally in Chrome. Starting a new batch replaces the old gallery after confirmation, so download results first. Provider result URLs may expire. Up to 300 items and 7 MB of deduplicated image data are supported per document; browser storage is shared across documents. Remove items or use smaller uploads if storage fills. The service stores job handles and result URLs in `server/jobs.sqlite3`; keep that database across service restarts to preserve duplicate-submission protection. Source image data is sent to fal but is not stored in the service database. By default, restarting the service prints a new local token; update Prefire settings, or set `PREFIRE_TOKEN` to a persistent token in your environment.
+
+### Development checks
+
+```sh
+python3 -m unittest discover -s tests -p 'test_tryon.py'
+python3 tests/check-tryon.py
+python3 tests/check-sharing.py
+node --test tests/page.test.cjs
+python3 scripts/package.py
+```
+
+The JavaScript check scripts use macOS JavaScriptCore through `osascript`. Automated tests cover job persistence, duplicate prevention, uncertain submissions, credential boundaries, image validation, queue snapshots, and inventory traversal. Live Firefly scanning and paid provider output still require testing in an actual board with a configured fal account.
 
 ## Where views are saved
 
